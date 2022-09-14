@@ -34,6 +34,8 @@ format: html
 마크다운 문서
 PDF 출력해 발표.
 
+수정, test
+
 
 ## 코드 청크
 
