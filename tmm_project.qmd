@@ -1,0 +1,60 @@
+---
+title: "쿼토로 마크다운 문서 만들기"
+format: html
+---
+
+## 본문
+
+### 쿼토란 무엇인가?
+**문서출판시스템** 중 하나로 오픈소스이며,
+과학이나 기술 문서를 작성하는데 이용되는
+[*판닥(Pandoc)*](https://pandoc.org/)기반 시스템이다.
+여기서 **판닥**이란 문서를 다양한 형태로 변환시켜주는 기술을 의미한다.
+결국 쿼토란 **마크다운 문서**를 이용해 과학 또는 기술 문서 출판을 도와주는 시스템으로
+파이썬 등 다양한 언어를 지원하는 **차세대 R 마크다운 시스템**이라고 볼 수 있다.
+
+### 마크다운 문서는 무엇인가?
+마크업 언어의 일종으로 문서의 앞 뒤에 마크를 붙여
+읽고 쓰기 쉬운 문서 양식을 구성하는 것이다.
+마크를 통해 내용을 **강조**하거나 **구성**해 효율적인 편집을 가능하게 만드는 기술이다.
+
+### 프로젝트 제시 및 선정 이유
+#### 선정 기업 : [무신사](https://www.musinsa.com/app/)
+#### 선정 이유
+**무신사**는 국내 최대 온라인 의류 아울렛 플랫폼으로
+최근 유명 모델 기용, 대기업과 협업, 오프라인 스토어 런칭 등 공격적 행보를 보이고 있다.
+특히 집중하는 분야는 고가품 인증 거래 플랫폼으로 **무신사 부티크**와 **솔드아웃**을 운영 중이다.
+그러나 최근 판매 제품에 대해 경쟁사 네이버 크림과 일명 *"짝퉁공방"*을 벌인 뒤
+결국 자신들이 판매한 제품이 가품임을 인정하고 구매자에게 배상금 200%를 지급하는 위기를 겪었다.
+이번 기업 평판 분석 프로젝트를 통해 무신사의 위기 진행 상태와 여론을 알아보고,
+경쟁사 네이버 크림과 관련 키워드로 비교 분석을 통해
+포화 상태가 된 의류 플랫폼 시장에서 기업이 가져야 할 차별화 전략을 제안하고자 한다.
+
+과제
+마크다운 문서
+PDF 출력해 발표.
+
+
+## 코드 청크
+
+```{r}
+#| label: pkg
+#| echo: true
+#| warning: false
+
+library(tidyverse)
+library(palmerpenguins)
+
+ggplot(penguins, 
+       aes(x = flipper_length_mm, y = bill_length_mm)) +
+  geom_point(aes(color = species, shape = species)) +
+  scale_color_manual(values = c("darkorange","purple","cyan4")) +
+  labs(
+    title = "Flipper and bill length",
+    subtitle = "Dimensions for penguins at Palmer Station LTER",
+    x = "Flipper length (mm)", y = "Bill length (mm)",
+    color = "Penguin species", shape = "Penguin species"
+  ) +
+  theme_minimal()
+
+```
