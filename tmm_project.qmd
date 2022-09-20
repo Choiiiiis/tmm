@@ -1,26 +1,10 @@
 ---
-title: "쿼토로 마크다운 문서 만들기"
+title: "TMM 기업 분석 프로젝트_MUSINSA"
 format: html
 ---
 
-## 본문
-
-### 쿼토란 무엇인가?
-**문서출판시스템** 중 하나로 오픈소스이며,
-과학이나 기술 문서를 작성하는데 이용되는
-[*판닥(Pandoc)*](https://pandoc.org/)기반 시스템이다.
-여기서 **판닥**이란 문서를 다양한 형태로 변환시켜주는 기술을 의미한다.
-결국 쿼토란 **마크다운 문서**를 이용해 과학 또는 기술 문서 출판을 도와주는 시스템으로
-파이썬 등 다양한 언어를 지원하는 **차세대 R 마크다운 시스템**이라고 볼 수 있다.
-
-### 마크다운 문서는 무엇인가?
-마크업 언어의 일종으로 문서의 앞 뒤에 마크를 붙여
-읽고 쓰기 쉬운 문서 양식을 구성하는 것이다.
-마크를 통해 내용을 **강조**하거나 **구성**해 효율적인 편집을 가능하게 만드는 기술이다.
-
-### 프로젝트 제시 및 선정 이유
-#### 선정 기업 : [무신사](https://www.musinsa.com/app/)
-#### 선정 이유
+### 분석 기업 : [무신사](https://www.musinsa.com/app/)
+### 분석 이유
 **무신사**는 국내 최대 온라인 의류 아울렛 플랫폼으로
 최근 유명 모델 기용, 대기업과 협업, 오프라인 스토어 런칭 등 공격적 행보를 보이고 있다.
 특히 집중하는 분야는 고가품 인증 거래 플랫폼으로 **무신사 부티크**와 **솔드아웃**을 운영 중이다.
@@ -30,33 +14,1030 @@ format: html
 경쟁사 네이버 크림과 관련 키워드로 비교 분석을 통해
 포화 상태가 된 의류 플랫폼 시장에서 기업이 가져야 할 차별화 전략을 제안하고자 한다.
 
-과제
-마크다운 문서
-PDF 출력해 발표.
 
-수정, test
+### TMM 기업 분석 프로젝트
+1차 분석. 데이터셋 500-1000건 대상 빈도분석, 상대빈도, 감정분석, 총빈도
 
-
-## 코드 청크
-
+### 자료 수집
+#### 빅카인즈 데이터셋 수집
 ```{r}
-#| label: pkg
+#| label: data_ready
 #| echo: true
 #| warning: false
 
-library(tidyverse)
-library(palmerpenguins)
+pkg_v <- c("tidyverse", "tidytext", "readxl", "kableExtra", 
+           "multilinguer", "RcppMeCab", "KoNLP", "lubridate", 
+           "tidylo", "stm", "reshape2", "dplyr", "ggplot2", 
+           "stringr", "rvest", "wordcloud")
 
-ggplot(penguins, 
-       aes(x = flipper_length_mm, y = bill_length_mm)) +
-  geom_point(aes(color = species, shape = species)) +
-  scale_color_manual(values = c("darkorange","purple","cyan4")) +
-  labs(
-    title = "Flipper and bill length",
-    subtitle = "Dimensions for penguins at Palmer Station LTER",
-    x = "Flipper length (mm)", y = "Bill length (mm)",
-    color = "Penguin species", shape = "Penguin species"
-  ) +
-  theme_minimal()
+# 패키지 설치 시 사용
+#( pkg_v_installed <- pkg_v %in% installed.packages()[,"Package"] )
+
+#( new_pkg <- pkg_v[!pkg_v_installed] )
+
+#if(length(new_pkg)) install.packages(new_pkg)
+
+lapply(pkg_v, require, ch = T)
+
+musinsa_df <- 
+readxl::read_excel("data/NewsResult_20220101-20220430_musinsa.xlsx") %>% 
+  select(일자, 제목, 본문, cat = `통합 분류1`) 
+
+kream_df <- 
+readxl::read_excel("data/NewsResult_20220101-20220430_kream.xlsx") %>% 
+  select(일자, 제목, 본문, cat = `통합 분류1`) 
+
+trenbe_df <- 
+readxl::read_excel("data/NewsResult_20220101-20220430_trenbe.xlsx") %>% 
+  select(일자, 제목, 본문, cat = `통합 분류1`) 
+
+balaan_df <- 
+readxl::read_excel("data/NewsResult_20220101-20220430_balaan.xlsx") %>% 
+  select(일자, 제목, 본문, cat = `통합 분류1`) 
 
 ```
+
+
+### 자료 분석
+#### 총빈도 / 무신사
+```{r}
+#| label: musinsa_all
+#| echo: true
+#| warning: false
+
+# "무신사"가 "무신 + 사"로 반영되어 사전에 "무신사" 추가
+#buildDictionary(ext_dic = c('sejong', 'woorimalsam'),
+#                user_dic = data.frame(term="무신사", tag='ncn'),
+#                category_dic_nms=c('brand'))
+
+musinsa2_df <- 
+musinsa_df %>% 
+  distinct(제목, .keep_all = T) %>% 
+  mutate(ID = factor(row_number())) %>% 
+  mutate(label = "0") %>%
+  unite(제목, 본문, col = "text", sep = " ") %>% 
+  mutate(text = str_squish(text))
+
+musinsa_tk <- musinsa2_df %>% 
+  mutate(text = str_remove_all(text, "[^(\\w+|\\s)]")) %>%  
+  unnest_tokens(word, text, token = extractNoun, drop = F) %>%
+  count(word, sort = T)
+
+musinsa_tk <- 
+musinsa_tk %>% 
+  filter(!word %in% c("무신사", "MUSINSA", "기자")) %>% 
+  filter(str_detect(word, "[:alpha:]+"))
+
+musinsa_tk %>%
+  filter(str_length(word) > 1) %>%
+  slice_max(n, n = 15) %>% 
+  mutate(word = reorder(word, n)) %>% 
+  ggplot(aes(word, n)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "무신사 총빈도")
+
+```
+
+
+#### 총빈도 / 크림
+```{r}
+#| label: kream_all
+#| echo: true
+#| warning: false
+
+kream2_df <- 
+kream_df %>% 
+  distinct(제목, .keep_all = T) %>% 
+  mutate(ID = factor(row_number())) %>% 
+  mutate(label = "1") %>%
+  unite(제목, 본문, col = "text", sep = " ") %>% 
+  mutate(text = str_squish(text))
+
+kream_tk <- kream2_df %>% 
+  mutate(text = str_remove_all(text, "[^(\\w+|\\s)]")) %>%  
+  unnest_tokens(word, text, token = extractNoun, drop = F) %>%
+  count(word, sort = T)
+
+kream_tk <- 
+kream_tk %>% 
+  filter(!word %in% c("크림", "KREAM")) %>% 
+  filter(str_detect(word, "[:alpha:]+"))
+
+kream_tk %>%
+  filter(str_length(word) > 1) %>%
+  slice_max(n, n = 15) %>% 
+  mutate(word = reorder(word, n)) %>% 
+  ggplot(aes(word, n)) +
+  geom_col() +
+  coord_flip() +
+    labs(title = "크림 총빈도")
+```
+
+
+#### 총빈도 / 트렌비
+```{r}
+#| label: trenbe_all
+#| echo: true
+#| warning: false
+
+trenbe2_df <- 
+trenbe_df %>% 
+  distinct(제목, .keep_all = T) %>% 
+  mutate(ID = factor(row_number())) %>% 
+  unite(제목, 본문, col = "text", sep = " ") %>% 
+  mutate(text = str_squish(text))
+
+trenbe_tk <- trenbe2_df %>% 
+  mutate(text = str_remove_all(text, "[^(\\w+|\\s)]")) %>%  
+  unnest_tokens(word, text, token = extractNoun, drop = F) %>%
+  count(word, sort = T)
+
+trenbe_tk <- 
+trenbe_tk %>% 
+  filter(!word %in% c("트렌비", "trenbe")) %>% 
+  filter(str_detect(word, "[:alpha:]+"))
+
+trenbe_tk %>%
+  filter(str_length(word) > 1) %>%
+  slice_max(n, n = 15) %>% 
+  mutate(word = reorder(word, n)) %>% 
+  ggplot(aes(word, n)) +
+  geom_col() +
+  coord_flip() +
+    labs(title = "트렌비 총빈도")
+```
+
+
+#### 총빈도 / 발란
+```{r}
+#| label: balaan_all
+#| echo: true
+#| warning: false
+
+balaan2_df <- 
+balaan_df %>% 
+  distinct(제목, .keep_all = T) %>% 
+  mutate(ID = factor(row_number())) %>% 
+  unite(제목, 본문, col = "text", sep = " ") %>% 
+  mutate(text = str_squish(text))
+
+balaan_tk <- balaan2_df %>% 
+  mutate(text = str_remove_all(text, "[^(\\w+|\\s)]")) %>%  
+  unnest_tokens(word, text, token = extractNoun, drop = F) %>%
+  count(word, sort = T)
+
+balaan_tk <- 
+balaan_tk %>% 
+  filter(!word %in% c("발란", "balaan")) %>% 
+  filter(str_detect(word, "[:alpha:]+"))
+
+balaan_tk %>%
+  filter(str_length(word) > 1) %>%
+  slice_max(n, n = 15) %>% 
+  mutate(word = reorder(word, n)) %>% 
+  ggplot(aes(word, n)) +
+  geom_col() +
+  coord_flip() +
+    labs(title = "발란 총빈도")
+
+```
+
+
+### 상대빈도
+```{r}
+#| label: vs
+#| echo: true
+#| warning: false
+
+vs_df <- rbind(musinsa2_df, kream2_df)
+
+set.seed(35)
+
+vsvs_df <- 
+  vs_df[-c(1, 3)] %>% 
+  relocate(c(ID, text)) %>%
+  group_by(label) %>% 
+  sample_n(size = 100)
+
+rate_odds_df <- 
+vsvs_df %>% 
+  unnest_tokens(word, text, token = pos) %>% 
+  separate(word, c("word", "pos"), sep = "/") %>% 
+  filter(pos == "nng") %>% 
+  count(word) %>% 
+  pivot_wider(names_from = label,
+              values_from = n, 
+              values_fill = list(n = 0)) %>% 
+  rename(posi = `1`, nega = `0`) %>% 
+  mutate(odds_posi = ((posi+1)/sum(posi+1)),
+         odds_nega = ((nega+1)/sum(nega+1))) %>% 
+  mutate(posi_odds_ratio = (odds_posi / odds_nega)) %>% 
+  filter(rank(posi_odds_ratio) <= 20 | rank(-posi_odds_ratio) <= 20) %>%   arrange(-posi_odds_ratio)
+
+rate_log_df <- 
+vsvs_df %>% 
+  unnest_tokens(word, text, token = pos) %>% 
+  separate(word, c("word", "pos"), sep = "/") %>% 
+  filter(pos == "nng") %>% 
+  count(word) %>% 
+  pivot_wider(names_from = label,
+              values_from = n, 
+              values_fill = list(n = 0)) %>% 
+  rename(posi = `1`, nega = `0`) %>% 
+  mutate(odds_posi = ((posi+1)/sum(posi+1)),
+         odds_nega = ((nega+1)/sum(nega+1))) %>% 
+  mutate(log_odds_ratio = log(odds_posi / odds_nega)) 
+
+weighted_log_odds_df <- 
+vsvs_df %>% 
+  unnest_tokens(word, text, token = pos) %>% 
+  separate(word, c("word", "pos"), sep = "/") %>% 
+  filter(str_length(word) > 1) %>%
+  filter(pos == "nng") %>% 
+  filter(word != "무신사") %>% 
+  filter(word != "크림") %>% 
+  count(word) %>% 
+  bind_log_odds(set = label,
+                feature = word,
+                n = n) %>% 
+  arrange(-log_odds_weighted)
+
+weighted_log_odds_df %>%
+  group_by(label = ifelse(label > 0, "크림", "무신사")) %>%
+  slice_max(abs(log_odds_weighted), n = 10) %>%
+  ggplot(aes(x = log_odds_weighted,
+             y = reorder(word, log_odds_weighted),
+             fill = label)) +
+  geom_col(show.legend = F) +
+  facet_wrap(~label, scale = "free")
+
+```
+
+
+### 감정분석
+#### 무신사 감정분석
+```{r}
+#| label: musinsa_senti
+#| echo: true
+#| warning: false
+
+# "knusenti" 설치 코드
+#url_v <- "https://github.com/park1200656/KnuSentiLex/archive/refs/heads/master.zip"
+
+#dest_v <- "data/knusenti.zip"
+
+#download.file(url = url_v, 
+#              destfile = dest_v,
+#              mode = "wb")
+
+#unzip("knusenti.zip", exdir = "data")
+
+senti_name_v <- list.files("data/KnuSentiLex-master/.")[9]
+
+senti_dic_df <- read_tsv(str_c("data/KnuSentiLex-master/", senti_name_v), col_names = F)
+
+senti_dic_df <- senti_dic_df %>% rename(word = X1, sScore = X2)
+
+knu_dic_df <- senti_dic_df %>% 
+  filter(!is.na(sScore))
+
+musinsa_senti_df <- musinsa2_df %>% 
+  unnest_tokens(word, text, token = extractNoun) %>% 
+  inner_join(knu_dic_df) %>% 
+  count(word, sScore, sort = T) %>% 
+  filter(str_length(word) > 1) %>% 
+  mutate(word = reorder(word, n)) %>% 
+  slice_head(n = 20)
+
+musinsa_senti_df %>% 
+  ggplot() + geom_col(aes(n, word, fill = sScore), show.legend = F) +
+    labs(title = "무신사 감정빈도 분석")
+
+```
+
+
+#### 크림 감정분석
+```{r}
+#| label: kream_senti
+#| echo: true
+#| warning: false
+
+kream_senti_df <- kream2_df %>% 
+  unnest_tokens(word, text, token = extractNoun) %>% 
+  inner_join(knu_dic_df) %>% 
+  count(word, sScore, sort = T) %>% 
+  filter(str_length(word) > 1) %>% 
+  mutate(word = reorder(word, n)) %>% 
+  slice_head(n = 20)
+
+kream_senti_df %>% 
+  ggplot() + geom_col(aes(n, word, fill = sScore), show.legend = F) +
+    labs(title = "크림 감정빈도 분석",)
+
+```
+
+
+#### 트렌비 감정분석
+```{r}
+#| label: trenbe_senti
+#| echo: true
+#| warning: false
+
+trenbe_senti_df <- trenbe2_df %>% 
+  unnest_tokens(word, text, token = extractNoun) %>% 
+  inner_join(knu_dic_df) %>% 
+  count(word, sScore, sort = T) %>% 
+  filter(str_length(word) > 1) %>% 
+  mutate(word = reorder(word, n)) %>% 
+  slice_head(n = 20)
+
+trenbe_senti_df %>% 
+  ggplot() + geom_col(aes(n, word, fill = sScore), show.legend = F) +
+    labs(title = "트렌비 감정빈도 분석",)
+
+```
+
+
+#### 발란 감정분석
+```{r}
+#| label: balaan_senti
+#| echo: true
+#| warning: false
+
+balaan_senti_df <- balaan2_df %>% 
+  unnest_tokens(word, text, token = extractNoun) %>% 
+  inner_join(knu_dic_df) %>% 
+  count(word, sScore, sort = T) %>% 
+  filter(str_length(word) > 1) %>% 
+  mutate(word = reorder(word, n)) %>% 
+  slice_head(n = 20)
+
+balaan_senti_df %>% 
+  ggplot() + geom_col(aes(n, word, fill = sScore), show.legend = F) +
+    labs(title = "발란 감정빈도 분석",)
+
+```
+
+
+#### 무신사 긍정어 부정어
+```{r}
+#| label: musinsa_pone
+#| echo: true
+#| warning: false
+
+musinsa2_df %>% 
+  unnest_tokens(word, text) %>% 
+  left_join(knu_dic_df) %>% 
+  mutate(sScore = ifelse(sScore >= 1, "긍정",
+                         ifelse(sScore <= -1, "부정", "중립"))) %>% 
+  count(sScore)
+
+# 워드클라우드
+#musinsa2_df %>% 
+#  unnest_tokens(word, text) %>% 
+#  inner_join(knu_dic_df) %>% 
+#  mutate(emotion = ifelse(sScore > 0, "긍정", ifelse(sScore < 0, "부정", "중립"))) %>% 
+#  filter(emotion != "중립") %>% 
+#  count(word, emotion, sort = T) %>% 
+#  filter(str_length(word) > 1) %>% 
+#  reshape2::acast(word ~ emotion, value.var = "n", fill = 0) %>% 
+#  comparison.cloud(colors = c("blue", "red"), max.words = 50)
+
+musinsa2_df %>%   
+  unnest_tokens(word, text, token = extractNoun) %>% 
+  inner_join(knu_dic_df) %>% 
+  mutate(emotion = ifelse(sScore > 0, "긍정", ifelse(sScore < 0, "부정", "중립"))) %>%
+  mutate(label = ifelse(sScore > 0, "1", ifelse(sScore < 0, "0", "2"))) %>%
+  filter(label != "중립") %>%
+  count(word, emotion, label, sort = T) %>%
+  filter(str_length(word) > 1) %>%
+  group_by(label = ifelse(label > 0, "긍정", "부정")) %>%
+#  slice_max(abs(n), n = 15) %>%
+  slice_head(n = 15) %>%
+  ggplot(aes(x = n,
+             y = reorder(word, n), fill = label)) +
+  geom_col(show.legend = F) +
+  facet_wrap(~label, scale = "free") +
+  labs(title = "무신사 긍정어 부정어")
+
+```
+
+
+#### 크림 긍정어 부정어
+```{r}
+#| label: kream_pone
+#| echo: true
+#| warning: false
+
+kream2_df %>% 
+  unnest_tokens(word, text) %>% 
+  left_join(knu_dic_df) %>% 
+  mutate(sScore = ifelse(sScore >= 1, "긍정",
+                         ifelse(sScore <= -1, "부정", "중립"))) %>% 
+  count(sScore)
+
+# 워드클라우드
+#kream2_df %>% 
+#  unnest_tokens(word, text) %>% 
+#  inner_join(knu_dic_df) %>% 
+#  mutate(emotion = ifelse(sScore > 0, "긍정", ifelse(sScore < 0, "부정", "중립"))) %>% 
+#  filter(emotion != "중립") %>% 
+#  count(word, emotion, sort = T) %>% 
+#  filter(str_length(word) > 1) %>% 
+#  reshape2::acast(word ~ emotion, value.var = "n", fill = 0) %>% 
+#  comparison.cloud(colors = c("blue", "red"), max.words = 50)
+
+kream2_df %>%   
+  unnest_tokens(word, text, token = extractNoun) %>% 
+  inner_join(knu_dic_df) %>% 
+  mutate(emotion = ifelse(sScore > 0, "긍정", ifelse(sScore < 0, "부정", "중립"))) %>%
+  mutate(label = ifelse(sScore > 0, "1", ifelse(sScore < 0, "0", "2"))) %>%
+  filter(label != "중립") %>% 
+  count(word, emotion, label, sort = T) %>%
+  filter(str_length(word) > 1) %>%
+  group_by(label = ifelse(label > 0, "긍정", "부정")) %>%
+#  slice_max(abs(n), n = 10) %>%
+  slice_head(n = 15) %>%
+  ggplot(aes(x = n,
+             y = reorder(word, n), fill = label)) +
+  geom_col(show.legend = F) +
+  facet_wrap(~label, scale = "free") +
+  labs(title = "크림 긍정어 부정어")
+
+```
+
+
+#### 트렌비 긍정어 부정어
+```{r}
+#| label: trenbe_pone
+#| echo: true
+#| warning: false
+
+trenbe2_df %>% 
+  unnest_tokens(word, text) %>% 
+  left_join(knu_dic_df) %>% 
+  mutate(sScore = ifelse(sScore >= 1, "긍정",
+                         ifelse(sScore <= -1, "부정", "중립"))) %>% 
+  count(sScore)
+
+# 워드클라우드
+#trenbe2_df %>% 
+#  unnest_tokens(word, text) %>% 
+#  inner_join(knu_dic_df) %>% 
+#  mutate(emotion = ifelse(sScore > 0, "긍정", ifelse(sScore < 0, "부정", "중립"))) %>% 
+#  filter(emotion != "중립") %>% 
+#  count(word, emotion, sort = T) %>% 
+#  filter(str_length(word) > 1) %>% 
+#  reshape2::acast(word ~ emotion, value.var = "n", fill = 0) %>% 
+#  comparison.cloud(colors = c("blue", "red"), max.words = 50)
+
+trenbe2_df %>%   
+  unnest_tokens(word, text, token = extractNoun) %>% 
+  inner_join(knu_dic_df) %>% 
+  mutate(emotion = ifelse(sScore > 0, "긍정", ifelse(sScore < 0, "부정", "중립"))) %>%
+  mutate(label = ifelse(sScore > 0, "1", ifelse(sScore < 0, "0", "2"))) %>%
+  filter(label != "중립") %>% 
+  count(word, emotion, label, sort = T) %>%
+  filter(str_length(word) > 1) %>%
+  group_by(label = ifelse(label > 0, "긍정", "부정")) %>%
+#  slice_max(abs(n), n = 10) %>%
+  slice_head(n = 15) %>%
+  ggplot(aes(x = n,
+             y = reorder(word, n), fill = label)) +
+  geom_col(show.legend = F) +
+  facet_wrap(~label, scale = "free") +
+  labs(title = "트렌비 긍정어 부정어")
+
+```
+
+
+#### 발란 긍정어 부정어
+```{r}
+#| label: balaan_pone
+#| echo: true
+#| warning: false
+
+balaan2_df %>% 
+  unnest_tokens(word, text) %>% 
+  left_join(knu_dic_df) %>% 
+  mutate(sScore = ifelse(sScore >= 1, "긍정",
+                         ifelse(sScore <= -1, "부정", "중립"))) %>% 
+  count(sScore)
+
+# 워드클라우드
+#balaan2_df %>% 
+#  unnest_tokens(word, text) %>% 
+#  inner_join(knu_dic_df) %>% 
+#  mutate(emotion = ifelse(sScore > 0, "긍정", ifelse(sScore < 0, "부정", "중립"))) %>% 
+#  filter(emotion != "중립") %>% 
+#  count(word, emotion, sort = T) %>% 
+#  filter(str_length(word) > 1) %>% 
+#  reshape2::acast(word ~ emotion, value.var = "n", fill = 0) %>% 
+#  comparison.cloud(colors = c("blue", "red"), max.words = 50)
+
+balaan2_df %>%   
+  unnest_tokens(word, text, token = extractNoun) %>% 
+  inner_join(knu_dic_df) %>% 
+  mutate(emotion = ifelse(sScore > 0, "긍정", ifelse(sScore < 0, "부정", "중립"))) %>%
+  mutate(label = ifelse(sScore > 0, "1", ifelse(sScore < 0, "0", "2"))) %>%
+  filter(label != "중립") %>% 
+  count(word, emotion, label, sort = T) %>%
+  filter(str_length(word) > 1) %>%
+  group_by(label = ifelse(label > 0, "긍정", "부정")) %>%
+#  slice_max(abs(n), n = 10) %>%
+  slice_head(n = 15) %>%
+  ggplot(aes(x = n,
+             y = reorder(word, n), fill = label)) +
+  geom_col(show.legend = F) +
+  facet_wrap(~label, scale = "free") +
+  labs(title = "발란 긍정어 부정어")
+
+```
+
+
+### 토픽모델링
+#### 주제별 단어 확률 분포 / 무신사
+```{r}
+#| label: musinsa_topic
+#| echo: true
+#| warning: false
+
+musinsa_topic_tk <- musinsa2_df %>% 
+  mutate(text = str_remove_all(text, "[^(\\w+|\\s)]")) %>%  
+  unnest_tokens(word, text, token = extractNoun, drop = F)
+
+musinsa_topic_tk <- 
+musinsa_topic_tk %>% 
+  filter(!word %in% c("무신사", "MUSINSA", "무신")) %>% 
+  filter(str_detect(word, "[:alpha:]+"))
+
+musinsa_combined_df <-
+  musinsa_topic_tk %>%
+  group_by(ID) %>%
+  summarise(text2 = str_flatten(word, " ")) %>%
+  ungroup() %>% 
+  inner_join(musinsa2_df, by = "ID")
+
+processed <- 
+  musinsa2_df %>% textProcessor(documents = musinsa_combined_df$text2, metadata = .)
+
+out <-
+  prepDocuments(processed$documents,
+                processed$vocab,
+                processed$meta, 
+                lower.thresh = 10)
+
+docs <- out$documents
+vocab <- out$vocab
+meta <- out$meta
+
+topicN <- c(3, 10)
+
+storage <- searchK(out$documents, out$vocab, K = topicN)
+
+musinsa_stm_fit <-
+  stm(
+    documents = docs,
+    vocab = vocab,
+    K = 6,
+    data = meta,
+    init.type = "Spectral",
+    seed = 37,
+    verbose = F
+  )
+
+musinsa_td_beta <- musinsa_stm_fit %>% tidy(matrix = 'beta') 
+
+musinsa_td_beta %>% 
+  group_by(topic) %>% 
+  slice_max(beta, n = 7) %>% 
+  ungroup() %>% 
+  mutate(topic = str_c("주제", topic)) %>% 
+  
+  ggplot(aes(x = beta, 
+             y = reorder(term, beta),
+             fill = topic)) +
+  geom_col(show.legend = F) +
+  facet_wrap(~topic, scales = "free") +
+  labs(x = expression("단어 확률분포: "~beta), y = NULL,
+       title = "주제별 단어 확률 분포",
+       subtitle = "각 주제별로 다른 단어들로 군집") +
+  theme(plot.title = element_text(size = 20))
+
+
+```
+
+
+#### 주제별 단어 확률 분포 / 크림
+```{r}
+#| label: kream_topic
+#| echo: true
+#| warning: false
+
+kream_topic_tk <- kream2_df %>% 
+  mutate(text = str_remove_all(text, "[^(\\w+|\\s)]")) %>%  
+  unnest_tokens(word, text, token = extractNoun, drop = F)
+
+kream_topic_tk <- 
+kream_topic_tk %>% 
+  filter(!word %in% c("크림", "KREAM")) %>% 
+  filter(str_detect(word, "[:alpha:]+"))
+
+kream_combined_df <-
+  kream_topic_tk %>%
+  group_by(ID) %>%
+  summarise(text2 = str_flatten(word, " ")) %>%
+  ungroup() %>% 
+  inner_join(kream2_df, by = "ID")
+
+processed <- 
+  kream2_df %>% textProcessor(documents = kream_combined_df$text2, metadata = .)
+
+out <-
+  prepDocuments(processed$documents,
+                processed$vocab,
+                processed$meta, 
+                lower.thresh = 10)
+
+docs <- out$documents
+vocab <- out$vocab
+meta <- out$meta
+
+topicN <- c(3, 10)
+
+storage <- searchK(out$documents, out$vocab, K = topicN)
+
+kream_stm_fit <-
+  stm(
+    documents = docs,
+    vocab = vocab,
+    K = 6,
+    data = meta,
+    init.type = "Spectral",
+    seed = 37,
+    verbose = F
+  )
+
+kream_td_beta <- kream_stm_fit %>% tidy(matrix = 'beta') 
+
+kream_td_beta %>% 
+  group_by(topic) %>% 
+  slice_max(beta, n = 7) %>% 
+  ungroup() %>% 
+  mutate(topic = str_c("주제", topic)) %>% 
+  
+  ggplot(aes(x = beta, 
+             y = reorder(term, beta),
+             fill = topic)) +
+  geom_col(show.legend = F) +
+  facet_wrap(~topic, scales = "free") +
+  labs(x = expression("단어 확률분포: "~beta), y = NULL,
+       title = "주제별 단어 확률 분포",
+       subtitle = "각 주제별로 다른 단어들로 군집") +
+  theme(plot.title = element_text(size = 20))
+
+```
+
+
+#### 주제별 단어 확률 분포 / 트렌비
+```{r}
+#| label: trenbe_topic
+#| echo: true
+#| warning: false
+
+trenbe_topic_tk <- trenbe2_df %>% 
+  mutate(text = str_remove_all(text, "[^(\\w+|\\s)]")) %>%  
+  unnest_tokens(word, text, token = extractNoun, drop = F)
+
+trenbe_topic_tk <- 
+trenbe_topic_tk %>% 
+  filter(!word %in% c("트렌비", "trenbe")) %>% 
+  filter(str_detect(word, "[:alpha:]+"))
+
+trenbe_combined_df <-
+  trenbe_topic_tk %>%
+  group_by(ID) %>%
+  summarise(text2 = str_flatten(word, " ")) %>%
+  ungroup() %>% 
+  inner_join(trenbe2_df, by = "ID")
+
+processed <- 
+  trenbe2_df %>% textProcessor(documents = trenbe_combined_df$text2, metadata = .)
+
+out <-
+  prepDocuments(processed$documents,
+                processed$vocab,
+                processed$meta, 
+                lower.thresh = 9)
+
+docs <- out$documents
+vocab <- out$vocab
+meta <- out$meta
+
+topicN <- c(3, 9)
+
+storage <- searchK(out$documents, out$vocab, K = topicN)
+
+trenbe_stm_fit <-
+  stm(
+    documents = docs,
+    vocab = vocab,
+    K = 6,
+    data = meta,
+    init.type = "Spectral",
+    seed = 37,
+    verbose = F
+  )
+
+trenbe_td_beta <- trenbe_stm_fit %>% tidy(matrix = 'beta') 
+
+trenbe_td_beta %>% 
+  group_by(topic) %>% 
+  slice_max(beta, n = 7) %>% 
+  ungroup() %>% 
+  mutate(topic = str_c("주제", topic)) %>% 
+  
+  ggplot(aes(x = beta, 
+             y = reorder(term, beta),
+             fill = topic)) +
+  geom_col(show.legend = F) +
+  facet_wrap(~topic, scales = "free") +
+  labs(x = expression("단어 확률분포: "~beta), y = NULL,
+       title = "주제별 단어 확률 분포",
+       subtitle = "각 주제별로 다른 단어들로 군집") +
+  theme(plot.title = element_text(size = 20))
+
+```
+
+
+#### 주제별 단어 확률 분포 / 발란
+```{r}
+#| label: balaan_topic
+#| echo: true
+#| warning: false
+
+balaan_topic_tk <- balaan2_df %>% 
+  mutate(text = str_remove_all(text, "[^(\\w+|\\s)]")) %>%  
+  unnest_tokens(word, text, token = extractNoun, drop = F)
+
+balaan_topic_tk <- 
+balaan_topic_tk %>% 
+  filter(!word %in% c("발란", "balaan")) %>% 
+  filter(str_detect(word, "[:alpha:]+"))
+
+balaan_combined_df <-
+  balaan_topic_tk %>%
+  group_by(ID) %>%
+  summarise(text2 = str_flatten(word, " ")) %>%
+  ungroup() %>% 
+  inner_join(balaan2_df, by = "ID")
+
+processed <- 
+  balaan2_df %>% textProcessor(documents = balaan_combined_df$text2, metadata = .)
+
+out <-
+  prepDocuments(processed$documents,
+                processed$vocab,
+                processed$meta, 
+                lower.thresh = 10)
+
+docs <- out$documents
+vocab <- out$vocab
+meta <- out$meta
+
+topicN <- c(3, 10)
+
+storage <- searchK(out$documents, out$vocab, K = topicN)
+
+balaan_stm_fit <-
+  stm(
+    documents = docs,
+    vocab = vocab,
+    K = 6,
+    data = meta,
+    init.type = "Spectral",
+    seed = 37,
+    verbose = F
+  )
+
+balaan_td_beta <- balaan_stm_fit %>% tidy(matrix = 'beta') 
+
+balaan_td_beta %>% 
+  group_by(topic) %>% 
+  slice_max(beta, n = 7) %>% 
+  ungroup() %>% 
+  mutate(topic = str_c("주제", topic)) %>% 
+  
+  ggplot(aes(x = beta, 
+             y = reorder(term, beta),
+             fill = topic)) +
+  geom_col(show.legend = F) +
+  facet_wrap(~topic, scales = "free") +
+  labs(x = expression("단어 확률분포: "~beta), y = NULL,
+       title = "주제별 단어 확률 분포",
+       subtitle = "각 주제별로 다른 단어들로 군집") +
+  theme(plot.title = element_text(size = 20))
+
+```
+
+
+#### 관련보도 상위 주제어 / 무신사
+```{r}
+#| label: musinsa_word
+#| echo: true
+#| warning: false
+
+musinsa_td_gamma <- musinsa_stm_fit %>% tidy(matrix = "gamma") 
+
+musinsa_top_terms <- 
+musinsa_td_beta %>% 
+  group_by(topic) %>% 
+  slice_max(beta, n = 5) %>% 
+  select(topic, term) %>% 
+  summarise(terms = str_flatten(term, collapse = ", ")) 
+
+musinsa_gamma_terms <- 
+musinsa_td_gamma %>% 
+  group_by(topic) %>% 
+  summarise(gamma = mean(gamma)) %>% 
+  left_join(musinsa_top_terms, by = 'topic') %>% 
+  mutate(topic = str_c("주제", topic),
+         topic = reorder(topic, gamma))
+
+musinsa_gamma_terms %>% 
+  ggplot(aes(x = gamma, y = topic, fill = topic)) +
+  geom_col(show.legend = F) +
+  geom_text(aes(label = round(gamma, 2)), # 소수점 2자리 
+            hjust = 1.4) +                # 라벨을 막대도표 안쪽으로 이동
+  geom_text(aes(label = terms), 
+            hjust = -0.05) +              # 단어를 막대도표 바깥으로 이동
+  scale_x_continuous(expand = c(0, 0),    # x축 막대 위치를 Y축쪽으로 조정
+                     limit = c(0, 1)) +   # x축 범위 설정
+  labs(x = expression("문서 확률분포"~(gamma)), y = NULL,
+       title = "무신사 관련보도 상위 주제어",
+       subtitle = "주제별로 기여도가 높은 단어 중심") +
+  theme(plot.title = element_text(size = 20))
+```
+
+
+#### 관련보도 상위 주제어 / 크림
+```{r}
+#| label: kream_word
+#| echo: true
+#| warning: false
+
+kream_td_gamma <- kream_stm_fit %>% tidy(matrix = "gamma") 
+
+kream_top_terms <- 
+kream_td_beta %>% 
+  group_by(topic) %>% 
+  slice_max(beta, n = 5) %>% 
+  select(topic, term) %>% 
+  summarise(terms = str_flatten(term, collapse = ", ")) 
+
+kream_gamma_terms <- 
+kream_td_gamma %>% 
+  group_by(topic) %>% 
+  summarise(gamma = mean(gamma)) %>% 
+  left_join(kream_top_terms, by = 'topic') %>% 
+  mutate(topic = str_c("주제", topic),
+         topic = reorder(topic, gamma))
+
+kream_gamma_terms %>% 
+  ggplot(aes(x = gamma, y = topic, fill = topic)) +
+  geom_col(show.legend = F) +
+  geom_text(aes(label = round(gamma, 2)), # 소수점 2자리 
+            hjust = 1.4) +                # 라벨을 막대도표 안쪽으로 이동
+  geom_text(aes(label = terms), 
+            hjust = -0.05) +              # 단어를 막대도표 바깥으로 이동
+  scale_x_continuous(expand = c(0, 0),    # x축 막대 위치를 Y축쪽으로 조정
+                     limit = c(0, 1)) +   # x축 범위 설정
+  labs(x = expression("문서 확률분포"~(gamma)), y = NULL,
+       title = "크림 관련보도 상위 주제어",
+       subtitle = "주제별로 기여도가 높은 단어 중심") +
+  theme(plot.title = element_text(size = 20))
+```
+
+
+#### 관련보도 상위 주제어 / 트렌비
+```{r}
+#| label: trenbe_word
+#| echo: true
+#| warning: false
+
+trenbe_td_gamma <- trenbe_stm_fit %>% tidy(matrix = "gamma") 
+
+trenbe_top_terms <- 
+trenbe_td_beta %>% 
+  group_by(topic) %>% 
+  slice_max(beta, n = 5) %>% 
+  select(topic, term) %>% 
+  summarise(terms = str_flatten(term, collapse = ", ")) 
+
+trenbe_gamma_terms <- 
+trenbe_td_gamma %>% 
+  group_by(topic) %>% 
+  summarise(gamma = mean(gamma)) %>% 
+  left_join(trenbe_top_terms, by = 'topic') %>% 
+  mutate(topic = str_c("주제", topic),
+         topic = reorder(topic, gamma))
+
+trenbe_gamma_terms %>% 
+  ggplot(aes(x = gamma, y = topic, fill = topic)) +
+  geom_col(show.legend = F) +
+  geom_text(aes(label = round(gamma, 2)),
+            hjust = 1.4) +
+  geom_text(aes(label = terms), 
+            hjust = -0.05) +
+  scale_x_continuous(expand = c(0, 0),
+                     limit = c(0, 1)) +
+  labs(x = expression("문서 확률분포"~(gamma)), y = NULL,
+       title = "트렌비 관련보도 상위 주제어",
+       subtitle = "주제별로 기여도가 높은 단어 중심") +
+  theme(plot.title = element_text(size = 20))
+```
+
+
+#### 관련보도 상위 주제어 / 발란
+```{r}
+#| label: balaan_word
+#| echo: true
+#| warning: false
+
+balaan_td_gamma <- balaan_stm_fit %>% tidy(matrix = "gamma") 
+
+balaan_top_terms <- 
+balaan_td_beta %>% 
+  group_by(topic) %>% 
+  slice_max(beta, n = 5) %>% 
+  select(topic, term) %>% 
+  summarise(terms = str_flatten(term, collapse = ", ")) 
+
+balaan_gamma_terms <- 
+balaan_td_gamma %>% 
+  group_by(topic) %>% 
+  summarise(gamma = mean(gamma)) %>% 
+  left_join(balaan_top_terms, by = 'topic') %>% 
+  mutate(topic = str_c("주제", topic),
+         topic = reorder(topic, gamma))
+
+balaan_gamma_terms %>% 
+  ggplot(aes(x = gamma, y = topic, fill = topic)) +
+  geom_col(show.legend = F) +
+  geom_text(aes(label = round(gamma, 2)),
+            hjust = 1.4) +
+  geom_text(aes(label = terms), 
+            hjust = -0.05) +
+  scale_x_continuous(expand = c(0, 0),
+                     limit = c(0, 1)) +
+  labs(x = expression("문서 확률분포"~(gamma)), y = NULL,
+       title = "발란 관련보도 상위 주제어",
+       subtitle = "주제별로 기여도가 높은 단어 중심") +
+  theme(plot.title = element_text(size = 20))
+```
+
+
+#### 크롤링 코드 테스트
+```{r}
+#| label: test
+#| echo: true
+#| warning: false
+
+#library(httr)
+#library(jsonlite)
+
+#musinsa_blog <- c()
+
+#for (i in 1:10) {
+#   httr::GET(url   = "https://section.blog.naver.com/ajax/SearchList.nhn",
+#             query = list("countPerPage" = "10",
+#                          "currentPage"  = i,
+#                          "endDate"      = "2022-09-19",
+#                          "keyword"      = "무신사 + 가품",
+#                          "orderBy"      = "sim",
+#                          "startDate"    = "2021-09-19",
+#                          "type"         = "post"),
+#             add_headers("referer" = "https://section.blog.naver.com/Search/Post.nh")) %>% 
+#     httr::content(as = "text") %>%
+#     str_remove(pattern = '\\)\\]\\}\',') %>%
+#     jsonlite::fromJSON() -> naverBlog
+#   data <- naverBlog$result$searchList
+#   musinsa_blog <- dplyr::bind_rows(musinsa_blog, data)
+#   cat(i, "번째 페이지 정리 완료\n")
+#   Sys.sleep(time = 3)
+# }
+
+#musinsa_blog_df <- musinsa_blog %>%  
+#   dplyr::select(1, 2, 6, 11) %>% 
+#   dplyr::rename(ID      = blogId,
+#                 일자      = addDate,
+#                 text   = noTagTitle,
+#                 cat    = logNo) %>%
+#   mutate(label = "0") %>%
+#   relocate(c(일자, text, cat, ID, label))
+
+#musinsa2_df <- rbind(musinsa2_df, musinsa_blog_df)
+
+```
+
