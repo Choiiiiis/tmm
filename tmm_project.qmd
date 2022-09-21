@@ -1,6 +1,8 @@
 ---
 title: "TMM 기업 분석 프로젝트_MUSINSA"
 format: html
+code-fold: true
+code-tools: true
 ---
 
 ### 분석 기업 : [무신사](https://www.musinsa.com/app/)
@@ -17,6 +19,9 @@ format: html
 
 ### TMM 기업 분석 프로젝트
 1차 분석. 데이터셋 500-1000건 대상 빈도분석, 상대빈도, 감정분석, 총빈도
+2차 분석. 2개 기업으로 축소해서 정교화. RccpMeCab 활용. 데이터셋 수집 어렵다면 무신사 중심으로 방향 전환 가능.
+빅카인즈, 위키 크롤링 데이터셋 확보할 수 있는 방향으로. rvest 이용.
+키워드 '무신사'와 '패션 플랫폼 NOT 무신사, cat 서비스-쇼핑'로 전체 플랫폼에서 무신사 차별점과 전략 분석.
 
 ### 자료 수집
 #### 빅카인즈 데이터셋 수집
@@ -671,7 +676,7 @@ meta <- out$meta
 
 topicN <- c(3, 10)
 
-storage <- searchK(out$documents, out$vocab, K = topicN)
+#storage <- searchK(out$documents, out$vocab, K = topicN)
 
 kream_stm_fit <-
   stm(
@@ -742,7 +747,7 @@ meta <- out$meta
 
 topicN <- c(3, 8)
 
-storage <- searchK(out$documents, out$vocab, K = topicN)
+#storage <- searchK(out$documents, out$vocab, K = topicN)
 
 trenbe_stm_fit <-
   stm(
@@ -813,7 +818,7 @@ meta <- out$meta
 
 topicN <- c(3, 10)
 
-storage <- searchK(out$documents, out$vocab, K = topicN)
+#storage <- searchK(out$documents, out$vocab, K = topicN)
 
 balaan_stm_fit <-
   stm(
@@ -1008,6 +1013,7 @@ balaan_gamma_terms %>%
 #| label: test
 #| echo: true
 #| warning: false
+
 
 #library(httr)
 #library(jsonlite)
