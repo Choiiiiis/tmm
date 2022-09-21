@@ -141,6 +141,11 @@ kream_tk %>%
 #| echo: true
 #| warning: false
 
+# 사전에 "트렌비" 추가
+#(ext_dic = c('sejong', 'woorimalsam'),
+#                user_dic = data.frame(term="트렌비", tag='ncn'),
+#                category_dic_nms=c('brand'))
+
 trenbe2_df <- 
 trenbe_df %>% 
   distinct(제목, .keep_all = T) %>% 
@@ -729,13 +734,13 @@ out <-
   prepDocuments(processed$documents,
                 processed$vocab,
                 processed$meta, 
-                lower.thresh = 9)
+                lower.thresh = 8)
 
 docs <- out$documents
 vocab <- out$vocab
 meta <- out$meta
 
-topicN <- c(3, 9)
+topicN <- c(3, 8)
 
 storage <- searchK(out$documents, out$vocab, K = topicN)
 
