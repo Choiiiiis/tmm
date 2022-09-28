@@ -40,7 +40,7 @@ COVID-19 팬데믹 이후 *비대면 온라인 시장*이 활성화 된 시점�
 키워드 '무신사'와 '패션 플랫폼 NOT 무신사, cat 서비스-쇼핑'로
 전체 패션 플랫폼에서 무신사의 차별점과 전략 분석.
 
-##### githack HTML / [URL](https://rawcdn.githack.com/Choiiiiis/tmm/fdb396c14c295cbdd333504d65bd9673e0f01b0e/tmm_project.html)
+##### githack HTML / [URL](https://rawcdn.githack.com/Choiiiiis/tmm/4fcc710ae15ca5ac362280c496266ad848f5f306/tmm_project.html)
 
 ### 자료 수집
 ##### 빅카인즈 데이터셋 수집
