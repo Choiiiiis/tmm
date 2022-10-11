@@ -1,11 +1,11 @@
 ---
 title: "TMM 기업 분석 프로젝트"
-subtitle: "무신사와 패션 플랫폼 간 비교 분석을 통한 차별점 및 전략 제안"
+subtitle: "21년, 22년 무신사 연간 비교 분석. UPDATE / October 12, 2022"
 format: html
 author: 언론홍보학과 2021202027 최성진
 title-block-style: default
 title-block-banner: "#6E6E6E"
-date: 2022-10-04
+date: 2022-09-21
 code-fold: true
 code-tools: true
 ---
@@ -14,28 +14,28 @@ code-tools: true
 
 ### 분석 이유
 
-> **무신사**는 국내 최대 온라인 의류 아울렛 플랫폼으로 최근 유명 모델 기용, 대기업과 협업, 오프라인 스토어 런칭 등 공격적 행보를 보이고 있다. COVID-19 팬데믹 이후 *비대면 온라인 시장*이 활성화 된 시점에서 다른 패션 플랫폼 대비 무신사가 갖는 **차별점**과 앞으로의 **전략**을 분석, 제안하고자 한다.
+> **무신사**는 국내 최대 온라인 의류 아울렛 플랫폼으로 최근 유명 모델 기용, 대기업과 협업, 오프라인 스토어 런칭 등 공격적 행보를 보이고 있다. 무신사가 큰 폭으로 성장한 21년과 22년에 발행된 기사를 비교 분석하여 **차이점**과 앞으로의 **전략**을 분석, 제안하고자 한다.
 
 ### 목차
 
 1.  자료 수집
     a)  빅카인즈 데이터셋 수집
 2.  자료 분석
-    a)  총빈도 / 무신사
-    b)  총빈도 / 패션 플랫폼
+    a)  총빈도 / 21년 무신사
+    b)  총빈도 / 22년 무신사
 3.  상대빈도
 4.  감정 분석
-    a)  감정 분석 / 무신사
-    b)  감정 분석 / 패션 플랫폼
+    a)  감정 분석 / 21년 무신사
+    b)  감정 분석 / 22년 무신사
 5.  긍정어 부정어 분석
-    a)  긍정어 부정어 분석 / 무신사
-    b)  긍정어 부정어 분석 / 패션 플랫폼
+    a)  긍정어 부정어 분석 / 21년 무신사
+    b)  긍정어 부정어 분석 / 22년 무신사
 6.  토픽 모델링
-    a)  토픽 모델링 / 무신사
-    b)  토픽 모델링 / 패션 플랫폼
+    a)  토픽 모델링 / 21년 무신사
+    b)  토픽 모델링 / 22년 무신사
 7.  관련 보도 상위 주제어
-    a)  관련 보도 상위 주제어 / 무신사
-    b)  관련 보도 상위 주제어 / 패션 플랫폼
+    a)  관련 보도 상위 주제어 / 21년 무신사
+    b)  관련 보도 상위 주제어 / 22년 무신사
 8.  결론
     a)  차별점
     b)  전략
@@ -64,24 +64,24 @@ pkg_v <- c("tidyverse", "tidytext", "readxl", "kableExtra",
 
 lapply(pkg_v, require, ch = T)
 
-musinsa_df <- 
-readxl::read_excel("data/NewsResult_20210927-20220927_musinsa.xlsx") %>% 
+musinsa_21year_df <- 
+readxl::read_excel("data/NewsResult_20210101-20211004_musinsa.xlsx") %>% 
   select(일자, 제목, 본문, cat = `통합 분류1`) 
 
-plat_df <- 
-readxl::read_excel("data/NewsResult_20210927-20220927_plat.xlsx") %>% 
+musinsa_22year_df <- 
+readxl::read_excel("data/NewsResult_20220101-20221004_musinsa.xlsx") %>% 
   select(일자, 제목, 본문, cat = `통합 분류1`) 
 
 ```
 
-> 2021.09.27 - 2022.09.27 무신사 2,056건, 패션 플랫폼 1,330건 확보.
+> 2021.01.01 - 2021.10.04 간 1,413건, 2022.01.01 - 2022.10.04 간 1,597건 확보.
 
 ### 2. 자료 분석
 
-##### a. 총빈도 / 무신사
+##### a. 총빈도 / 무신사 21년
 
 ```{r}
-#| label: musinsa_all
+#| label: musinsa_21year_all
 #| echo: true
 #| warning: false
 
@@ -90,81 +90,75 @@ readxl::read_excel("data/NewsResult_20210927-20220927_plat.xlsx") %>%
 #                user_dic = data.frame(term="역직구", tag='ncn'),
 #                category_dic_nms=c('brand'))
 
-musinsa2_df <- 
-musinsa_df %>% 
+musinsa_21year2_df <- 
+musinsa_21year_df %>% 
   distinct(제목, .keep_all = T) %>% 
   mutate(ID = factor(row_number())) %>% 
   mutate(label = "0") %>%
   unite(제목, 본문, col = "text", sep = " ") %>% 
   mutate(text = str_squish(text))
 
-musinsa_tk <- musinsa2_df %>% 
+musinsa_21year_tk <- musinsa_21year2_df %>% 
   mutate(text = str_remove_all(text, "[^(\\w+|\\s)]")) %>%  
   unnest_tokens(word, text, token = extractNoun, drop = F) %>%
 #  separate(word, c("word", "pos"), sep = "/") %>% 
 #  filter(pos == "nng") %>% 
   count(word, sort = T)
 
-musinsa_tk <- 
-musinsa_tk %>% 
+musinsa_21year_tk <- 
+musinsa_21year_tk %>% 
   filter(!word %in% c("무신사", "MUSINSA", "기자")) %>% 
   filter(str_detect(word, "[:alpha:]+"))
 
-musinsa_tk %>%
+musinsa_21year_tk %>%
   filter(str_length(word) > 1) %>%
   slice_max(n, n = 15) %>% 
   mutate(word = reorder(word, n)) %>% 
   ggplot(aes(word, n)) +
   geom_col() +
   coord_flip() +
-  labs(title = "무신사 총빈도")
+  labs(title = "21년 무신사 총빈도")
 
 ```
 
-> 기업과 가장 관련있는 **패션, 플랫폼, 온라인**이 상위 키워드 위치. 서울 지역 오프라인 샵 개설에 따른 **서울, 투자** 키워드가 눈에 띄며, 최근 진출한 **명품**에 대한 기사는 다소 부족함.
+> 기업과 관련된 **패션, 브랜드, 온라인** 키워드가 자주 언급되었으며, **투자, 카드, 시장**과 같이 사업적 측면이 두드러짐. 성차별과 제스처에 관련된 사건이 **논란** 키워드를 통해 부정적으로 언급됨.
 
-##### b. 총빈도 / 패션 플랫폼
+##### b. 총빈도 / 무신사 22년
 
 ```{r}
-#| label: plat_all
+#| label: musinsa_22year_all
 #| echo: true
 #| warning: false
 
-plat2_df <- 
-plat_df %>% 
+musinsa_22year2_df <- 
+musinsa_22year_df %>% 
   distinct(제목, .keep_all = T) %>% 
   mutate(ID = factor(row_number())) %>% 
   mutate(label = "1") %>%
   unite(제목, 본문, col = "text", sep = " ") %>% 
   mutate(text = str_squish(text))
 
-plat_tk <- plat2_df %>% 
+musinsa_22year_tk <- musinsa_22year2_df %>% 
   mutate(text = str_remove_all(text, "[^(\\w+|\\s)]")) %>%  
   unnest_tokens(word, text, token = extractNoun, drop = F) %>%
   count(word, sort = T)
 
-plat_tk <- 
-plat_tk %>% 
-  filter(!word %in% c("기자", "패션", "플랫폼")) %>% 
+musinsa_22year_tk <- 
+musinsa_22year_tk %>% 
+  filter(!word %in% c("무신사", "MUSINSA", "기자")) %>% 
   filter(str_detect(word, "[:alpha:]+"))
 
-plat_tk %>%
+musinsa_22year_tk %>%
   filter(str_length(word) > 1) %>%
   slice_max(n, n = 15) %>% 
   mutate(word = reorder(word, n)) %>% 
   ggplot(aes(word, n)) +
   geom_col() +
   coord_flip() +
-    labs(title = "패션 플랫폼 총빈도")
+    labs(title = "22년 무신사 총빈도")
 ```
 
-> 무신사보다 **신세계, 백화점, 고객, 서비스** 등 오프라인 키워드가 두드러짐. 특히 고관여 상품인 **명품**이 현저히 많이 언급되고 있었음.
-
-::: {layout-ncol="2"}
-![무신사 총빈도](tmm_project_files/figure-html/musinsa_all-1.png)
-
-![패션 플랫폼 총빈도](tmm_project_files/figure-html/plat_all-1.png)
-:::
+> 21년도와 동일하게 기업과 관련된 **패션, 브랜드, 플랫폼**과 같은 키워드가 잘 언급되고 있었으며, 오프라인 샵 개설에 따른 **서울, 국내**와 고가품 플랫폼 런칭으로 **명품**이 새로 언급되기 시작함.
 
 ### 3. 상대빈도
 
@@ -173,15 +167,15 @@ plat_tk %>%
 #| echo: true
 #| warning: false
 
-vs_df <- rbind(musinsa2_df, plat2_df)
+vs_df <- rbind(musinsa_21year2_df, musinsa_22year2_df)
 
-set.seed(5)
+set.seed(15)
 
 vsvs_df <- 
   vs_df[-c(1, 3)] %>% 
   relocate(c(ID, text)) %>%
   group_by(label) %>% 
-  sample_n(size = 1300)
+  sample_n(size = 1400)
 
 rate_odds_df <- 
 vsvs_df %>% 
@@ -221,6 +215,8 @@ vsvs_df %>%
   filter(word != "무신사") %>% 
   filter(word != "fn") %>% 
   filter(word != "기자") %>% 
+  filter(word != "파이낸셜") %>% 
+  filter(word != "[헤럴드경제=이정아") %>% 
   count(word) %>% 
   bind_log_odds(set = label,
                 feature = word,
@@ -228,7 +224,7 @@ vsvs_df %>%
   arrange(-log_odds_weighted)
 
 weighted_log_odds_df %>%
-  group_by(label = ifelse(label > 0, "패션 플랫폼", "무신사")) %>%
+  group_by(label = ifelse(label > 0, "22년 무신사", "21년 무신사")) %>%
   slice_max(abs(log_odds_weighted), n = 10) %>%
   ggplot(aes(x = log_odds_weighted,
              y = reorder(word, log_odds_weighted),
@@ -238,14 +234,14 @@ weighted_log_odds_df %>%
 
 ```
 
-> 무신사는 자사에 관련된 **스탠다드, 유아인, 유니콘** 등이 자주 언급되었으며, 패션 플랫폼은 **추석, 백화점, 명품** 등 오프라인 중심인 모습을 확인할 수 있었음.
+> 21년에는 콜라보와 관련된 **참이슬, GS25**와 논란에 따른 **손가락, 포스터, 실망**이 상대적으로 자주 언급되었으며, 22년에는 주식 무상 증여에 따른 **증여, 무상**과 짝퉁 논란에 대한 **가품, 피어** 키워드가 자주 언급되었음.
 
 ### 4. 감정 분석
 
-##### a. 감정 분석 / 무신사
+##### a. 감정 분석 / 21년 무신사
 
 ```{r}
-#| label: musinsa_senti
+#| label: musinsa_21year_senti
 #| echo: true
 #| warning: false
 
@@ -269,7 +265,7 @@ senti_dic_df <- senti_dic_df %>% rename(word = X1, sScore = X2)
 knu_dic_df <- senti_dic_df %>% 
   filter(!is.na(sScore))
 
-musinsa_senti_df <- musinsa2_df %>% 
+musinsa_21year_senti_df <- musinsa_21year2_df %>% 
   unnest_tokens(word, text, token = extractNoun) %>% 
   inner_join(knu_dic_df) %>% 
   count(word, sScore, sort = T) %>% 
@@ -278,22 +274,22 @@ musinsa_senti_df <- musinsa2_df %>%
   mutate(word = reorder(word, n)) %>% 
   slice_head(n = 20)
 
-musinsa_senti_df %>% 
+musinsa_21year_senti_df %>% 
   ggplot() + geom_col(aes(n, word, fill = sScore), show.legend = F) +
-    labs(title = "무신사 감정빈도 분석")
+    labs(title = "21년 무신사 감정빈도 분석")
 
 ```
 
-> 랭킹 시스템을 메인에 배치하고 있기에 **인기** 상품에 대한 키워드가 가장 많이 나왔으며, 자체 프로모션을 지속적으로 진행하고 있어 **할인, 이벤트, 혜택**에 대한 언급이 자주 이루어짐. 다만 불편한 UI에 대한 **개선**과 가품 논란에 따른 **부담** 키워드도 자주 언급됨.
+> 프로모션에 대한 **할인, 인기, 이벤트, 혜택**과 같은 키워드가 긍정어로 자주 언급됨. 부정어로는 성차별과 제스처 논란으로 **혐오, 실망**이 자주 언급된 것을 확인할 수 있었음.
 
-##### b. 감정 분석 / 패션 플랫폼
+##### b. 감정 분석 / 22년 무신사
 
 ```{r}
-#| label: plat_senti
+#| label: musinsa_22year_senti
 #| echo: true
 #| warning: false
 
-plat_senti_df <- plat2_df %>% 
+musinsa_22year_senti_df <- musinsa_22year2_df %>% 
   unnest_tokens(word, text, token = extractNoun) %>% 
   inner_join(knu_dic_df) %>% 
   count(word, sScore, sort = T) %>% 
@@ -302,35 +298,35 @@ plat_senti_df <- plat2_df %>%
   mutate(word = reorder(word, n)) %>% 
   slice_head(n = 20)
 
-plat_senti_df %>% 
+musinsa_22year_senti_df %>% 
   ggplot() + geom_col(aes(n, word, fill = sScore), show.legend = F) +
-    labs(title = "패션 플랫폼 감정빈도 분석",)
+    labs(title = "22년 무신사 감정빈도 분석")
 
 ```
 
-> 쇼핑에 관련된 만큼 **할인, 인기, 혜택** 키워드가 상위를 차지하고 있음. **우수, 만족, 고급** 등 고가품과 서비스 관련 언급이 자주 이뤄지는게 무신사와 대비됨.
+> 21년과 동일하게 프로모션에 대한 **인기, 할인** 키워드가 긍정어로 수집되었으며, 부정어로 가품 논란에 따른 **부담, 개선** 키워드가 자주 언급되는 모습을 보임.
 
 ### 5. 긍정어 부정어 분석
 
-##### a. 긍정어 부정어 분석 / 무신사
+##### a. 긍정어 부정어 분석 / 21년 무신사
 
 ```{r}
-#| label: musinsa_pone
+#| label: musinsa_21year_pone
 #| echo: true
 #| warning: false
 
-musinsa2_df %>% 
+musinsa_21year2_df %>% 
   unnest_tokens(word, text) %>% 
   left_join(knu_dic_df) %>% 
   mutate(sScore = ifelse(sScore >= 1, "긍정",
                          ifelse(sScore <= -1, "부정", "중립"))) %>% 
   count(sScore) %>%
   gt() %>%
-  tab_header(title = "무신사",
+  tab_header(title = "21년 무신사",
              subtitle = "긍정어 부정어 점수")
 
 # 워드클라우드
-musinsa2_df %>% 
+musinsa_21year2_df %>% 
   unnest_tokens(word, text) %>% 
   inner_join(knu_dic_df) %>% 
   mutate(emotion = ifelse(sScore > 0, "긍정", ifelse(sScore < 0, "부정", "중립"))) %>% 
@@ -341,7 +337,7 @@ musinsa2_df %>%
   reshape2::acast(word ~ emotion, value.var = "n", fill = 0) %>% 
   comparison.cloud(colors = c("blue", "red"), max.words = 50)
 
-musinsa2_df %>%   
+musinsa_21year2_df %>%   
   unnest_tokens(word, text, token = extractNoun) %>% 
   inner_join(knu_dic_df) %>% 
   mutate(emotion = ifelse(sScore > 0, "긍정", ifelse(sScore < 0, "부정", "중립"))) %>%
@@ -356,31 +352,31 @@ musinsa2_df %>%
              y = reorder(word, n), fill = label)) +
   geom_col(show.legend = F) +
   facet_wrap(~label, scale = "free") +
-  labs(title = "무신사 긍정어 부정어")
+  labs(title = "21년 무신사 긍정어 부정어")
 
 ```
 
-> 4:1 로 긍정어 점수가 높은 편. 프로모션과 관련된 **할인, 이벤트, 혜택**과 같은 키워드가 긍정어로 분석되었으며, 가품 논란에 따른 **부담, 부진, 위축, 가짜** 키워드가 부정어로 분석됨.
+> 4.5:1 로 긍정어 점수가 높은 편. 프로모션과 관련된 **할인, 인기, 이벤트**와 같은 키워드가 긍정어로 분석되었으며, 성차별과 제스처 논란에 따른 **혐오, 실망, 비난** 키워드가 부정어로 분석됨.
 
-##### b. 긍정어 부정어 분석 / 패션 플랫폼
+##### b. 긍정어 부정어 분석 / 22년 무신사
 
 ```{r}
-#| label: plat_pone
+#| label: musinsa_22year_pone
 #| echo: true
 #| warning: false
 
-plat2_df %>% 
+musinsa_22year2_df %>% 
   unnest_tokens(word, text) %>% 
   left_join(knu_dic_df) %>% 
   mutate(sScore = ifelse(sScore >= 1, "긍정",
                          ifelse(sScore <= -1, "부정", "중립"))) %>% 
   count(sScore) %>%
   gt() %>%
-  tab_header(title = "패션 플랫폼",
+  tab_header(title = "22년 무신사",
              subtitle = "긍정어 부정어 점수")
 
 # 워드클라우드
-plat2_df %>% 
+musinsa_22year2_df %>% 
   unnest_tokens(word, text) %>% 
   inner_join(knu_dic_df) %>% 
   mutate(emotion = ifelse(sScore > 0, "긍정", ifelse(sScore < 0, "부정", "중립"))) %>% 
@@ -391,12 +387,12 @@ plat2_df %>%
   reshape2::acast(word ~ emotion, value.var = "n", fill = 0) %>% 
   comparison.cloud(colors = c("blue", "red"), max.words = 50)
 
-plat2_df %>%   
+musinsa_22year2_df %>%   
   unnest_tokens(word, text, token = extractNoun) %>% 
   inner_join(knu_dic_df) %>% 
   mutate(emotion = ifelse(sScore > 0, "긍정", ifelse(sScore < 0, "부정", "중립"))) %>%
   mutate(label = ifelse(sScore > 0, "1", ifelse(sScore < 0, "0", "2"))) %>%
-  filter(label != "중립") %>% 
+  filter(label != "중립") %>%
   count(word, emotion, label, sort = T) %>%
   filter(str_length(word) > 1) %>%
   filter(!word %in% c("대상")) %>% 
@@ -406,42 +402,42 @@ plat2_df %>%
              y = reorder(word, n), fill = label)) +
   geom_col(show.legend = F) +
   facet_wrap(~label, scale = "free") +
-  labs(title = "패션 플랫폼 긍정어 부정어")
+  labs(title = "22년 무신사 긍정어 부정어")
 
 ```
 
-> 6:1 로 긍정어 점수가 높은 편. 프로모션에 이어 **우수, 만족, 편안, 고급**과 같이 서비스와 품질에 대한 키워드가 긍정어로 분석되었으며, 오프라인 시장 축소에 따른 **걱정, 위축**과 **오염, 불량**과 같이 제품에 대한 불만 사항이 부정어로 분석됨.
+> 4.2:1 로 21년 보다 긍정어 점수 비율이 낮아짐. 전년과 동일하게 **인기, 할인** 키워드가 긍정어 상위를 차지했으며, 가품 논란에 따른 **부담, 위축, 가짜**가 부정어로 자주 언급되는 모습을 보임.
 
 ### 6. 토픽 모델링
 
-##### a. 주제별 단어 확률 분포 / 무신사
+##### a. 주제별 단어 확률 분포 / 21년 무신사
 
 ```{r}
-#| label: musinsa_topic
+#| label: musinsa_21year_topic
 #| echo: true
 #| warning: false
 
-musinsa_topic_tk <- musinsa2_df %>% 
+musinsa_21year_topic_tk <- musinsa_21year2_df %>% 
   mutate(text = str_remove_all(text, "[^(\\w+|\\s)]")) %>%  
   unnest_tokens(word, text, token = extractNoun, drop = F)
 
-musinsa_topic_tk <- 
-musinsa_topic_tk %>% 
+musinsa_21year_topic_tk <- 
+musinsa_21year_topic_tk %>% 
   filter(!word %in% c("무신사", "MUSINSA", "기자", "대상",
                       "투데이", "글로벌", "지난달", "지난해",
                       "가운데")) %>% 
   filter(str_detect(word, "[:alpha:]+"))
 
-musinsa_combined_df <-
-  musinsa_topic_tk %>%
+musinsa_21year_combined_df <-
+  musinsa_21year_topic_tk %>%
   group_by(ID) %>%
   summarise(text2 = str_flatten(word, " ")) %>%
   ungroup() %>% 
-  inner_join(musinsa2_df, by = "ID")
+  inner_join(musinsa_21year2_df, by = "ID")
 
 processed <- 
-  musinsa2_df %>% textProcessor(
-    documents = musinsa_combined_df$text2,
+  musinsa_21year2_df %>% textProcessor(
+    documents = musinsa_21year_combined_df$text2,
     metadata = .,
     )
 
@@ -459,7 +455,7 @@ topicN <- c(3, 10)
 
 #storage <- searchK(out$documents, out$vocab, K = topicN)
 
-musinsa_stm_fit <-
+musinsa_21year_stm_fit <-
   stm(
     documents = docs,
     vocab = vocab,
@@ -470,25 +466,25 @@ musinsa_stm_fit <-
     verbose = F
   )
 
-musinsa_td_beta <- musinsa_stm_fit %>% tidy(matrix = 'beta') 
+musinsa_21year_td_beta <- musinsa_21year_stm_fit %>% tidy(matrix = 'beta') 
 
 #labelTopics(musinsa_stm_fit)
 
-musinsa_topic_name <- tibble(topic = 1:6,
-                     name = c("1. 고객 서비스",
-                              "2. 자사 프로모션",
+musinsa_21year_topic_name <- tibble(topic = 1:6,
+                     name = c("1. 자사 마케팅",
+                              "2. 기업 경영",
                               "3. 비대면 시장",
-                              "4. 기업 투자",
-                              "5. 차별화 전략",
-                              "6. 사업 다각화") )
+                              "4. 시장 동향",
+                              "5. 패션 카테고리",
+                              "6. 경쟁 기업") )
 
-musinsa_term_topic_name <- 
-musinsa_td_beta %>% 
+musinsa_21year_term_topic_name <- 
+musinsa_21year_td_beta %>% 
   group_by(topic) %>% 
   slice_max(beta, n = 7) %>% 
-  left_join(musinsa_topic_name, by = "topic")
+  left_join(musinsa_21year_topic_name, by = "topic")
 
-musinsa_term_topic_name %>% 
+musinsa_21year_term_topic_name %>% 
   ggplot(aes(x = beta, 
              y = reorder_within(term, beta, name),
              fill = name)) +
@@ -502,36 +498,38 @@ musinsa_term_topic_name %>%
 
 ```
 
-> **자사 프로모션**과 **차별화 전략**에서 군집화가 잘 이루어짐.
+> **자사 마케팅**과 **시장 동향**에서 군집화가 잘 이루어짐.
 
-##### b. 주제별 단어 확률 분포 / 패션 플랫폼
+##### b. 주제별 단어 확률 분포 / 22년 무신사
 
 ```{r}
-#| label: plat_topic
+#| label: musinsa_22year_topic
 #| echo: true
 #| warning: false
 
-plat_topic_tk <- plat2_df %>% 
+musinsa_22year_topic_tk <- musinsa_22year2_df %>% 
   mutate(text = str_remove_all(text, "[^(\\w+|\\s)]")) %>%  
   unnest_tokens(word, text, token = extractNoun, drop = F)
 
-plat_topic_tk <- 
-plat_topic_tk %>% 
-  filter(!word %in% c("기자", "패션", "플랫폼", "대상", "경제뉴스",
-                      "키워드", "지난해", "투데이")) %>% 
+musinsa_22year_topic_tk <- 
+musinsa_22year_topic_tk %>% 
+  filter(!word %in% c("무신사", "MUSINSA", "기자", "대상",
+                      "투데이", "글로벌", "지난달", "지난해",
+                      "가운데", "헤럴드경제이정아")) %>% 
   filter(str_detect(word, "[:alpha:]+"))
 
-plat_combined_df <-
-  plat_topic_tk %>%
+musinsa_22year_combined_df <-
+  musinsa_22year_topic_tk %>%
   group_by(ID) %>%
   summarise(text2 = str_flatten(word, " ")) %>%
   ungroup() %>% 
-  inner_join(plat2_df, by = "ID")
+  inner_join(musinsa_22year2_df, by = "ID")
 
 processed <- 
-  plat2_df %>% textProcessor(
-    documents = plat_combined_df$text2,
-    metadata = .)
+  musinsa_22year2_df %>% textProcessor(
+    documents = musinsa_22year_combined_df$text2,
+    metadata = .,
+    )
 
 out <-
   prepDocuments(processed$documents,
@@ -547,7 +545,7 @@ topicN <- c(3, 10)
 
 #storage <- searchK(out$documents, out$vocab, K = topicN)
 
-plat_stm_fit <-
+musinsa_22year_stm_fit <-
   stm(
     documents = docs,
     vocab = vocab,
@@ -558,25 +556,25 @@ plat_stm_fit <-
     verbose = F
   )
 
-plat_td_beta <- plat_stm_fit %>% tidy(matrix = 'beta') 
+musinsa_22year_td_beta <- musinsa_22year_stm_fit %>% tidy(matrix = 'beta') 
 
-#labelTopics(plat_stm_fit)
+#labelTopics(musinsa_stm_fit)
 
-plat_topic_name <- tibble(topic = 1:6,
-                     name = c("1. 플랫폼 유통",
-                              "2. 패션 트렌드",
-                              "3. 온라인 경쟁",
-                              "4. 오프라인 차별화",
-                              "5. 디지털 전략",
-                              "6. 기업 프로모션") )
+musinsa_22year_topic_name <- tibble(topic = 1:6,
+                     name = c("1. 비대면 온라인",
+                              "2. 자사 라인업",
+                              "3. 럭셔리 리셀",
+                              "4. 자사 프로모션",
+                              "5. 플랫폼 경쟁",
+                              "6. 경쟁 기업") )
 
-plat_term_topic_name <- 
-plat_td_beta %>% 
+musinsa_22year_term_topic_name <- 
+musinsa_22year_td_beta %>% 
   group_by(topic) %>% 
   slice_max(beta, n = 7) %>% 
-  left_join(plat_topic_name, by = "topic")
+  left_join(musinsa_22year_topic_name, by = "topic")
 
-plat_term_topic_name %>% 
+musinsa_22year_term_topic_name %>% 
   ggplot(aes(x = beta, 
              y = reorder_within(term, beta, name),
              fill = name)) +
@@ -587,37 +585,38 @@ plat_term_topic_name %>%
        title = "주제별 단어 확률 분포",
        subtitle = "주제별로 다른 단어들로 군집") +
   theme(plot.title = element_text(size = 20))
+
 ```
 
-> **패션 트렌드**와 **디지털 전략**에서 군집화가 잘 이루어짐.
+> **자사 라인업**과 **경쟁 기업**에서 군집화가 잘 이루어짐.
 
 ### 7. 관련 보도 상위 주제어
 
-##### a. 관련 보도 상위 주제어 / 무신사
+##### a. 관련 보도 상위 주제어 / 21년 무신사
 
 ```{r}
-#| label: musinsa_word
+#| label: musinsa_21year_word
 #| echo: true
 #| warning: false
 
-musinsa_td_gamma <- musinsa_stm_fit %>% tidy(matrix = "gamma") 
+musinsa_21year_td_gamma <- musinsa_21year_stm_fit %>% tidy(matrix = "gamma") 
 
-musinsa_top_terms <- 
-musinsa_td_beta %>% 
+musinsa_21year_top_terms <- 
+musinsa_21year_td_beta %>% 
   group_by(topic) %>% 
   slice_max(beta, n = 5) %>% 
   select(topic, term) %>% 
   summarise(terms = str_flatten(term, collapse = ", ")) 
 
-musinsa_gamma_terms <- 
-musinsa_td_gamma %>% 
+musinsa_21year_gamma_terms <- 
+musinsa_21year_td_gamma %>% 
   group_by(topic) %>% 
   summarise(gamma = mean(gamma)) %>% 
-  left_join(musinsa_top_terms, by = 'topic') %>% 
+  left_join(musinsa_21year_top_terms, by = 'topic') %>% 
   mutate(topic = str_c("주제", topic),
          topic = reorder(topic, gamma))
 
-musinsa_gamma_terms %>% 
+musinsa_21year_gamma_terms %>% 
   ggplot(aes(x = gamma, y = topic, fill = topic)) +
   geom_col(show.legend = F) +
   geom_text(aes(label = round(gamma, 2)),
@@ -627,38 +626,39 @@ musinsa_gamma_terms %>%
   scale_x_continuous(expand = c(0, 0),
                      limit = c(0, 1)) +
   labs(x = expression("문서 확률분포"~(gamma)), y = NULL,
-       title = "무신사 관련 보도 상위 주제어",
+       title = "21년 무신사 관련 보도 상위 주제어",
        subtitle = "주제별로 기여도가 높은 단어 중심") +
   theme(plot.title = element_text(size = 20))
+
 ```
 
-> 무신사에 입점한 **브랜드**와 자사몰에서 판매중인 **한정판**에 대한 기사가 다수임. 펜데믹으로 인한 비대면 시장 활성화에 따라 **온라인, 코로나**와 같은 기사와 자사 브랜드에 대한 무신사 **스탠다드, 스토어**에 대한 언급이 잘 이루어지고 있음.
+> 무신사에서 판매중인 **브랜드**와 **디자인, 컬렉션**과 같이 의류 관련 기사가 자주 보도됨. **스타트, 유니콘** 키워드로 기업 성장을 주목하고 있으며, **카카오, 신세계, 지그재그**와 비교해 매출 증대를 조명하는 내용이 자주 언급되고 있음.
 
-##### b. 관련 보도 상위 주제어 / 패션 플랫폼
+##### b. 관련 보도 상위 주제어 / 22년 무신사
 
 ```{r}
-#| label: plat_word
+#| label: musinsa_22year_word
 #| echo: true
 #| warning: false
 
-plat_td_gamma <- plat_stm_fit %>% tidy(matrix = "gamma") 
+musinsa_22year_td_gamma <- musinsa_22year_stm_fit %>% tidy(matrix = "gamma") 
 
-plat_top_terms <- 
-plat_td_beta %>% 
+musinsa_22year_top_terms <- 
+musinsa_22year_td_beta %>% 
   group_by(topic) %>% 
   slice_max(beta, n = 5) %>% 
   select(topic, term) %>% 
   summarise(terms = str_flatten(term, collapse = ", ")) 
 
-plat_gamma_terms <- 
-plat_td_gamma %>% 
+musinsa_22year_gamma_terms <- 
+musinsa_22year_td_gamma %>% 
   group_by(topic) %>% 
   summarise(gamma = mean(gamma)) %>% 
-  left_join(plat_top_terms, by = 'topic') %>% 
+  left_join(musinsa_22year_top_terms, by = 'topic') %>% 
   mutate(topic = str_c("주제", topic),
          topic = reorder(topic, gamma))
 
-plat_gamma_terms %>% 
+musinsa_22year_gamma_terms %>% 
   ggplot(aes(x = gamma, y = topic, fill = topic)) +
   geom_col(show.legend = F) +
   geom_text(aes(label = round(gamma, 2)),
@@ -668,19 +668,19 @@ plat_gamma_terms %>%
   scale_x_continuous(expand = c(0, 0),
                      limit = c(0, 1)) +
   labs(x = expression("문서 확률분포"~(gamma)), y = NULL,
-       title = "패션 플랫폼 관련 보도 상위 주제어",
+       title = "22년 무신사 관련 보도 상위 주제어",
        subtitle = "주제별로 기여도가 높은 단어 중심") +
   theme(plot.title = element_text(size = 20))
 ```
 
-> 업계의 비대면 시장 진출에 따라 **온라인, 거래액**과 같은 기사가 다수 있었음. **럭셔리, 디자이너**와 같이 사치품 관련 기사와 온라인 프로모션 수단인 **메타버스, nft**와 같은 기사도 자주 발행되며 기존 패션 플랫폼 이미지를 탈피해 소비자에게 신선한 모습을 보이고자 함을 확인할 수 있었음.
+> 21년 보다 펜데믹으로 인한 **플랫폼, 온라인**과 같은 비대면 서비스가 상대적으로 자주 언급됨. 공격적인 프로모션을 진행함에 따라 **스토어, 스탠다드, 유아인** 등 무신사의 자사 브랜드 관련 키워드가 잘 언급되고 있음. 
 
 ### 8. 결론
 
-##### a. 차별점
+##### a. 차이점
 
-> **무신사**는 다양한 패션 브랜드가 입점해 있는 최대 규모의 온라인 아울렛이라는 점에 차별점이 있음. 또한 시대 트렌드를 재빨리 분석해 판권 취득을 통한 **단독 출시**와 **브랜드 콜라보 작업**을 통해 시장을 선점하고 있는 모습이 기존 패션 플랫폼과 차이점임.
+> 21년에는 타 기업과 **콜라보**에 관련된 기사가 많았음. 또한 **성차별 논란**이 크게 언급되며 기업 이미지 차원에서 위기를 맞이함. 22년에는 펜데믹으로 인한 **비대면 시장** 활성화, **자사 브랜드** 런칭에 관한 기사가 주를 이룸. 다만 **가품 논란**으로 브랜드 신뢰도에 타격을 입은 모습을 확인할 수 있음.
 
 ##### b. 전략
 
-> 온라인 시장은 선점했지만, **고가품**에 대해서는 소비자의 신뢰를 얻지 못하고 있음. 플랫폼의 크기는 유지하되 **UI**를 개선해 접근성을 높이고, 플래그십 스토어에 투자해 **브랜드 고급화 전략**을 취하는 것이 바람직해 보임.
+> 대체적으로 무신사의 프로모션 소식, 브랜드 런칭 등 자사에 **긍정적인 방향**으로 기사가 전개되고 있었음. 그러나 **이슈**가 발생하면 파급력이 굉장히 커지고, 기업 이미지에 심각한 타격을 입는 모습을 보였기 때문에 **기업 PR 차원**에서 전략적인 관리가 필요할 것으로 보임.
