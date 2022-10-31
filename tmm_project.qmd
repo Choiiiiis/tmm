@@ -46,8 +46,7 @@ code-tools: true
 
 ```{r}
 #| label: data_ready
-#| echo: true
-#| warning: false
+#| results: hide
 #| include: false
 
 pkg_v <- c("tidyverse", "tidytext", "readxl", "kableExtra", 
